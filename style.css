@@ -1,0 +1,20 @@
+.main {
+    display: flex;
+    column-gap: 5rem;
+    justify-content: center;
+    align-items: center;
+    padding: 20% 0;
+}
+
+.gameboard {
+    display: grid;
+    height: 30%;
+    width: 30%;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.gameboard > .grid {
+    border: 1px solid black;
+    padding: 1rem;
+}
