@@ -11,10 +11,33 @@
     height: 30%;
     width: 30%;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
 }
 
 .gameboard > .grid {
     border: 1px solid black;
     padding: 1rem;
+}
+
+.panel  {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+}
+
+.reset {
+    display: none;
+}
+
+.aiOpponent {
+    display: none;
+}
+
+.player1, .player2 {
+    display: flex;
+    column-gap: 0.5rem;
+}
+
+.gameboard > .annoucement {
+    grid-column: 1 / 4;
 }

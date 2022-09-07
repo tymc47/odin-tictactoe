@@ -5,13 +5,10 @@ const gameBoard = (function(){
 
     const getArray = () => {return _array};
 
-    const clearArray = () => {_array = ['', '', '', '', '', '', '', '', '']}
-
     const loadArray = () => {
         for (let i = 0; i < 9 ; i++){
             _array[i] = grids[i].textContent ;
-        }
-        
+        }    
     }
     
     const displayBoard = () => {
@@ -22,15 +19,17 @@ const gameBoard = (function(){
     
     const setBoard = (symbol) => {
         grids.forEach(grid => grid.addEventListener('click', () => {
-                if(grid.textContent == ''){
-                    grid.textContent = symbol;    
-                }
+            if(grid.textContent == ''){
+                grid.textContent = symbol;    
             }
+        }
         ))
     }
-
-    const clearDisplay = () => {
+    
+    const reset = () => {
+        _array = ['', '', '', '', '', '', '', '', '']
         grids.forEach(grid => grid.textContent = "")
+
     }
 
     const checkWin = () => {
@@ -45,55 +44,178 @@ const gameBoard = (function(){
     }
     return {
         getArray,
-        clearArray,
         loadArray,
         displayBoard,
         setBoard,
-        clearDisplay,
-        checkWin
+        checkWin,
+        reset
     }
 })();
 
-const players = function(){
-    const player1 = {name: "player1", symbol:"X"};
-    const player2 = {name: "player2", symbol: "O"};
+const players = (function(){
+    const player1 = {name: "Player1", symbol:"X"};
+    const player2 = {name: "Player2", symbol: "O"};
 
-    return {player1, player2};
-}();
+    const getPlayer1 = () => {return player1}
+    const getPlayer2 = () => {return player2}
+    const setPlayerSymbol = (player1Symbol) => {
+        player1.symbol = player1Symbol;
+        player2.symbol = player1Symbol == "X" ? "O" : "X";
+    }
+    const switchPlayer2 = () => {
+        player2.name != "A.I." ? player2.name = "A.I." : player2.name = "Player2"
+    }
+    return {getPlayer1, getPlayer2, setPlayerSymbol, switchPlayer2};
+})();
+
+const AI = (function(){
+    const grids = document.querySelectorAll('.gameboard .grid')
+
+    const move = () => {
+        const _array = gameBoard.getArray()
+        let index = randomIndex()
+        while (_array[index] != ""){
+            index = randomIndex()
+        }
+        grids[index].click();
+    }
+
+    const randomIndex = () => {
+        return Math.floor(Math.random()*9)
+    }
+    return {
+        move
+    }
+})()
 
 const gameFlow = (function(){
     const grids = document.querySelectorAll('.gameboard .grid')
-    let _symbol = "X"
+    let _currentPlayer = players.getPlayer1();
     let _gameEnd = ""
-    let _count = 0
-    // 1. Select vs AI or 2players -> 
-    // 2. Player/play1 select symbol, defaults X -> [start the whole game from start]
-    // 3. starts 
-
+    let _turn = 0
+    let _currentMode = "player"
+    
     const startGame = () => {
-      grids.forEach(grid => grid.addEventListener('click', ()=>{
-        if(grid.textContent == ''){
-            grid.textContent = _symbol;    
+        gameBoard.reset()
+        _currentPlayer = players.getPlayer1();
+        displayController.displayMsg("Game Start!")
+        grids.forEach(grid => grid.addEventListener('click', playerTurn))     
+    }
+    
+    const playerTurn = (event) => {
+        if(event.currentTarget.textContent == ''){
+            event.currentTarget.textContent = _currentPlayer.symbol;    
             switchTurn();
+            displayController.displayMsg(_currentPlayer.name + "'s turn");
             gameBoard.loadArray();
-            _count++
+            _turn++
+
+            //accomodate for AI turn
         }
+        
         _gameEnd = gameBoard.checkWin();
+        _currentPlayer.name == "A.I." ? AI.move() : false;
         if (_gameEnd != "") {endGame(_gameEnd)}
-        else if (_gameEnd == "" && _count == 9) {endGame("Tie")}
-      }))
-
+        else if (_gameEnd == "" && _turn == 9) {endGame("Tie")}
     }
-
+    
     const endGame = (state) => {
-        console.log(state)
+        let results = ""
+        if (state == "Tie"){results = "Tie!"}
+        if (state == _currentPlayer.symbol){
+            results = _currentPlayer.name + " wins!"
+        } else {
+            switchTurn();
+            results = _currentPlayer.name + " wins!"
+        }
+        grids.forEach(grid => grid.removeEventListener('click', playerTurn));
+        displayController.displayMsg(results) ;    
     }
-
+    
     const switchTurn = () => {
-        _symbol == "X" ? _symbol = "O" : _symbol = "X";
+        _currentPlayer.symbol == players.getPlayer1().symbol ? _currentPlayer = players.getPlayer2() : _currentPlayer = players.getPlayer1();
     }
 
-    return {startGame};
+    const switchMode = () => {
+        if(_currentMode == "player") {
+            _currentMode = "AI"; 
+            players.switchPlayer2();
+        } else {
+            _currentMode = "player";
+            players.switchPlayer2();
+        }
+    }
+    
+    
+    return {
+        startGame,
+        switchMode
+    };
 })();
 
-gameFlow.startGame();
+const displayController = (function(){
+    const player1 = document.querySelector('.player1>button');
+    const player2 = document.querySelector('.player2>button');
+    const startBtn = document.querySelector('.start');
+    const resetBtn = document.querySelector('.reset');
+    const display = document.querySelector('.gameboard>.annoucement')
+    const vsAIBtn = document.querySelector('.aiOpponent');
+    const vsPlayerBtn = document.querySelector('.playerOpponent');
+    
+    const displayMsg = (msg) => {
+        display.textContent = msg;
+    }
+    
+    const switchPlayerSymbol = () => {
+        player1.textContent = player1.textContent == "X" ? "O" : "X";
+        player2.textContent = player2.textContent == "X" ? "O" : "X";
+        players.setPlayerSymbol(player1.textContent);
+    }
+    
+    const disableBtns = () => {
+        player1.setAttribute('disabled', true)
+        player2.setAttribute('disabled', true)
+    }
+    
+    const enableBtns = () => {
+        player1.removeAttribute('disabled')
+        player2.removeAttribute('disabled')
+    }
+
+    player1.addEventListener('click', switchPlayerSymbol);
+    player2.addEventListener('click', switchPlayerSymbol);
+    startBtn.addEventListener('click', () => { 
+        gameFlow.startGame()
+        disableBtns();
+        startBtn.style.display = "none";
+        resetBtn.style.display = "block";
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        enableBtns();
+        startBtn.style.display = "block";
+        resetBtn.style.display = "none";
+        displayMsg("")
+    })
+    
+    vsAIBtn.addEventListener('click', () => {
+        gameFlow.switchMode()
+        displayMsg("Now in Player mode")
+        vsPlayerBtn.style.display = "block";
+        vsAIBtn.style.display = "none";
+        document.querySelector('.player2>.name').textContent = players.getPlayer2().name;
+    })
+    
+    vsPlayerBtn.addEventListener('click', () => {
+        gameFlow.switchMode()
+        displayMsg("Now in AI mode")
+        vsPlayerBtn.style.display = "none";
+        vsAIBtn.style.display = "block";
+        document.querySelector('.player2>.name').textContent = players.getPlayer2().name;
+    })
+    
+    return{
+        displayMsg
+    }
+})()
+
