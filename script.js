@@ -156,7 +156,7 @@ const gameFlow = (function(){
         gameBoard.reset()
         _currentPlayer = players.getPlayer1().symbol == "X" ? players.getPlayer1() : players.getPlayer2();
         _currentMode == "player" ? true : AI.setAISymbol();
-        displayController.displayMsg("Game Start!")
+        displayController.displayMsg("Game Start! X goes first")
         grids.forEach(grid => grid.addEventListener('click', playerTurn))
         //AI will go first if AI is X   
         _currentPlayer.name == "A.I." ? AI.randomMove(): false;
@@ -166,7 +166,7 @@ const gameFlow = (function(){
         if(event.currentTarget.textContent == ''){
             event.currentTarget.textContent = _currentPlayer.symbol;    
             switchTurn();
-            displayController.displayMsg(_currentPlayer.name + "'s turn");
+            displayController.displayMsg(_currentPlayer.symbol + "'s turn");
             gameBoard.loadArray();
             _gameEnd = gameBoard.checkWin();
             console.log(_gameEnd);
@@ -190,6 +190,8 @@ const gameFlow = (function(){
         displayController.displayMsg(results) ;    
     }
     
+    const restart = () => {startGame();}
+
     const switchTurn = () => {
         _currentPlayer.symbol == players.getPlayer1().symbol ? _currentPlayer = players.getPlayer2() : _currentPlayer = players.getPlayer1();
     }
@@ -207,7 +209,8 @@ const gameFlow = (function(){
     
     return {
         startGame,
-        switchMode
+        switchMode,
+        restart
     };
 })();
 
@@ -278,6 +281,11 @@ const displayController = (function(){
         vsPlayerBtn.style.display = "none";
         vsAIBtn.style.display = "block";
         document.querySelector('.player2>.name').textContent = players.getPlayer2().name;
+    })
+
+    restartBtn.addEventListener('click', () => {
+        gameFlow.restart()
+        displayMsg("Game restarted")
     })
     
     return{
