@@ -31,16 +31,18 @@ const gameBoard = (function(){
         grids.forEach(grid => grid.textContent = "")
 
     }
-
-    const checkWin = () => {
+    
+    //default parameter as actual game array, but allow imaginary game to check
+    const checkWin = (game = _array) => {
         let winner = ""
         winConditon.forEach(condition => {
             const checkArray = []
-            for (let i = 0; i < 3; i ++){checkArray.push(_array[condition[i]])}
+            for (let i = 0; i < 3; i ++){checkArray.push(game[condition[i]])}
             if (checkArray.every(letter => letter == "X")) {winner = "X"}
             if (checkArray.every(letter => letter == "O")) {winner = "O"}
         })
-        return winner;
+        
+        return winner != "" ? winner : (game.filter(grid => grid != "").length == 9 ? "Tie":"");
     }
     return {
         getArray,
@@ -70,20 +72,75 @@ const players = (function(){
 
 const AI = (function(){
     const grids = document.querySelectorAll('.gameboard .grid')
+    let _AISymbol = ""
+    let _opponentSymbol = ""
 
-    const move = () => {
+    const setAISymbol = () => {
+        _AISymbol = players.getPlayer2().symbol
+        _opponentSymbol = _AISymbol == "X" ? "O" : "X";
+    }
+
+    
+    const randomMove = () => {
         const _array = gameBoard.getArray()
-        let index = randomIndex()
+        let index = Math.floor(Math.random()*9)
         while (_array[index] != ""){
-            index = randomIndex()
+            index = Math.floor(Math.random()*9)
         }
         grids[index].click();
     }
 
-    const randomIndex = () => {
-        return Math.floor(Math.random()*9)
+    const move = () => {
+        let bestMove = minimax(gameBoard.getArray(), true).move
+        grids[bestMove].click();
     }
+    
+    const score = (game) => {
+        if (gameBoard.checkWin(game) == _AISymbol) {return 10}
+        else if (gameBoard.checkWin(game) == _opponentSymbol) {return -10}
+        else {return 0}
+    }
+
+    const minimax = (game, AITurn) => {
+        if (gameBoard.checkWin(game) != "") {return {score:score(game)}}
+        let moves = [];
+        
+        //get all possible moves
+        genGameState(game).forEach(move => {
+            let _currentState = Array.from(game);
+            if (AITurn) {
+                _currentState[move] = _AISymbol;
+                let score = minimax(_currentState, false).score
+                moves.push({move, score})
+            } else {
+                _currentState[move] = _opponentSymbol;
+                let score = minimax(_currentState, true).score
+                moves.push({move, score})
+            }            
+        });
+        
+        if (AITurn) {
+            //randomise choice when there are equal value choice
+            let maxIndex = Math.floor(Math.random()* moves.length);
+            for(let i = 0; i < moves.length; i++) {if (moves[i].score > moves[maxIndex].score) {maxIndex = i}}
+            return moves[maxIndex];
+        } else {
+            let minIndex = Math.floor(Math.random()* moves.length);
+            for(let i = 0; i < moves.length; i++) {if (moves[i].score < moves[minIndex].score) {minIndex = i}}
+            return moves[minIndex];
+        }
+    }
+
+    //generate possible game state
+    const genGameState = (game) => {
+        possibleMoves = []
+        for (let i = 0; i < 9; i++) {game[i]== "" ? possibleMoves.push(i): false};
+        return possibleMoves
+    } 
+
     return {
+        randomMove,
+        setAISymbol,
         move
     }
 })()
@@ -97,9 +154,12 @@ const gameFlow = (function(){
     
     const startGame = () => {
         gameBoard.reset()
-        _currentPlayer = players.getPlayer1();
+        _currentPlayer = players.getPlayer1().symbol == "X" ? players.getPlayer1() : players.getPlayer2();
+        _currentMode == "player" ? true : AI.setAISymbol();
         displayController.displayMsg("Game Start!")
-        grids.forEach(grid => grid.addEventListener('click', playerTurn))     
+        grids.forEach(grid => grid.addEventListener('click', playerTurn))
+        //AI will go first if AI is X   
+        _currentPlayer.name == "A.I." ? AI.randomMove(): false;
     }
     
     const playerTurn = (event) => {
@@ -108,21 +168,19 @@ const gameFlow = (function(){
             switchTurn();
             displayController.displayMsg(_currentPlayer.name + "'s turn");
             gameBoard.loadArray();
-            _turn++
-
-            //accomodate for AI turn
+            _gameEnd = gameBoard.checkWin();
+            console.log(_gameEnd);
+            if (_gameEnd != "") {endGame(_gameEnd); return;}
         }
         
-        _gameEnd = gameBoard.checkWin();
+        //accomodate for AI turn
         _currentPlayer.name == "A.I." ? AI.move() : false;
-        if (_gameEnd != "") {endGame(_gameEnd)}
-        else if (_gameEnd == "" && _turn == 9) {endGame("Tie")}
     }
     
     const endGame = (state) => {
         let results = ""
         if (state == "Tie"){results = "Tie!"}
-        if (state == _currentPlayer.symbol){
+        else if (state == _currentPlayer.symbol){
             results = _currentPlayer.name + " wins!"
         } else {
             switchTurn();
@@ -158,9 +216,10 @@ const displayController = (function(){
     const player2 = document.querySelector('.player2>button');
     const startBtn = document.querySelector('.start');
     const resetBtn = document.querySelector('.reset');
-    const display = document.querySelector('.gameboard>.annoucement')
-    const vsAIBtn = document.querySelector('.aiOpponent');
-    const vsPlayerBtn = document.querySelector('.playerOpponent');
+    const restartBtn = document.querySelector('.restart');
+    const display = document.querySelector('.annoucement')
+    const vsAIBtn = document.querySelector('.aiopponent');
+    const vsPlayerBtn = document.querySelector('.playeropponent');
     
     const displayMsg = (msg) => {
         display.textContent = msg;
@@ -175,11 +234,15 @@ const displayController = (function(){
     const disableBtns = () => {
         player1.setAttribute('disabled', true)
         player2.setAttribute('disabled', true)
+        vsAIBtn.setAttribute('disabled', true)
+        vsPlayerBtn.setAttribute('disabled', true)
     }
     
     const enableBtns = () => {
         player1.removeAttribute('disabled')
         player2.removeAttribute('disabled')
+        vsAIBtn.removeAttribute('disabled')
+        vsPlayerBtn.removeAttribute('disabled')
     }
 
     player1.addEventListener('click', switchPlayerSymbol);
@@ -189,13 +252,16 @@ const displayController = (function(){
         disableBtns();
         startBtn.style.display = "none";
         resetBtn.style.display = "block";
+        restartBtn.style.display = "block";
     });
     
     resetBtn.addEventListener('click', () => {
+        gameBoard.reset()
         enableBtns();
         startBtn.style.display = "block";
         resetBtn.style.display = "none";
-        displayMsg("")
+        restartBtn.style.display = "none";
+        displayMsg("Choose Your Opponent and Token! X will go first.")
     })
     
     vsAIBtn.addEventListener('click', () => {
@@ -208,7 +274,7 @@ const displayController = (function(){
     
     vsPlayerBtn.addEventListener('click', () => {
         gameFlow.switchMode()
-        displayMsg("Now in AI mode")
+        displayMsg("Now in AI mode. It is unbeatable")
         vsPlayerBtn.style.display = "none";
         vsAIBtn.style.display = "block";
         document.querySelector('.player2>.name').textContent = players.getPlayer2().name;
