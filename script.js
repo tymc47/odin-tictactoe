@@ -87,6 +87,7 @@ const AI = (function(){
         while (_array[index] != ""){
             index = Math.floor(Math.random()*9)
         }
+
         grids[index].click();
     }
 
@@ -96,27 +97,27 @@ const AI = (function(){
         grids[bestMove].click();
     }
     
-    const score = (game, turnLeft) => {
-        if (gameBoard.checkWin(game) == _AISymbol) {return 10 - turnLeft}
-        else if (gameBoard.checkWin(game) == _opponentSymbol) {return  turnLeft-10}
+    const score = (game, step) => {
+        if (gameBoard.checkWin(game) == _AISymbol) {return 10 - step}
+        else if (gameBoard.checkWin(game) == _opponentSymbol) {return  step-10}
         else {return 0}
     }
 
-    const minimax = (game, AITurn, turnLeft) => {
-        if (gameBoard.checkWin(game) != "") {return {score:score(game, turnLeft)}}
+    const minimax = (game, AITurn, step) => {
+        if (gameBoard.checkWin(game) != "") {return {score:score(game, step)}}
         let moves = [];
-        turnLeft++
+        step++
         
         //get all possible moves
         genGameState(game).forEach(move => {
             let _currentState = Array.from(game);
             if (AITurn) {
                 _currentState[move] = _AISymbol;
-                let score = minimax(_currentState, false, turnLeft).score
+                let score = minimax(_currentState, false, step).score
                 moves.push({move, score})
             } else {
                 _currentState[move] = _opponentSymbol;
-                let score = minimax(_currentState, true, turnLeft).score
+                let score = minimax(_currentState, true, step).score
                 moves.push({move, score})
             }            
         });
@@ -175,7 +176,9 @@ const gameFlow = (function(){
         }
         
         //accomodate for AI turn
-        _currentPlayer.name == "A.I." ? AI.move() : false;
+        setTimeout(() => {
+            _currentPlayer.name == "A.I." ? AI.move() : false;
+        }, 800)
     }
     
     const endGame = (state) => {
