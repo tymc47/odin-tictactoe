@@ -91,30 +91,32 @@ const AI = (function(){
     }
 
     const move = () => {
-        let bestMove = minimax(gameBoard.getArray(), true).move
+        let bestMove = minimax(gameBoard.getArray(), true, 0).move
+        console.log(bestMove);
         grids[bestMove].click();
     }
     
-    const score = (game) => {
-        if (gameBoard.checkWin(game) == _AISymbol) {return 10}
-        else if (gameBoard.checkWin(game) == _opponentSymbol) {return -10}
+    const score = (game, turnLeft) => {
+        if (gameBoard.checkWin(game) == _AISymbol) {return 10 - turnLeft}
+        else if (gameBoard.checkWin(game) == _opponentSymbol) {return  turnLeft-10}
         else {return 0}
     }
 
-    const minimax = (game, AITurn) => {
-        if (gameBoard.checkWin(game) != "") {return {score:score(game)}}
+    const minimax = (game, AITurn, turnLeft) => {
+        if (gameBoard.checkWin(game) != "") {return {score:score(game, turnLeft)}}
         let moves = [];
+        turnLeft++
         
         //get all possible moves
         genGameState(game).forEach(move => {
             let _currentState = Array.from(game);
             if (AITurn) {
                 _currentState[move] = _AISymbol;
-                let score = minimax(_currentState, false).score
+                let score = minimax(_currentState, false, turnLeft).score
                 moves.push({move, score})
             } else {
                 _currentState[move] = _opponentSymbol;
-                let score = minimax(_currentState, true).score
+                let score = minimax(_currentState, true, turnLeft).score
                 moves.push({move, score})
             }            
         });
@@ -169,7 +171,6 @@ const gameFlow = (function(){
             displayController.displayMsg(_currentPlayer.symbol + "'s turn");
             gameBoard.loadArray();
             _gameEnd = gameBoard.checkWin();
-            console.log(_gameEnd);
             if (_gameEnd != "") {endGame(_gameEnd); return;}
         }
         
@@ -269,7 +270,7 @@ const displayController = (function(){
     
     vsAIBtn.addEventListener('click', () => {
         gameFlow.switchMode()
-        displayMsg("Now in Player mode")
+        displayMsg("Now in 2 Players mode")
         vsPlayerBtn.style.display = "block";
         vsAIBtn.style.display = "none";
         document.querySelector('.player2>.name').textContent = players.getPlayer2().name;
@@ -277,7 +278,7 @@ const displayController = (function(){
     
     vsPlayerBtn.addEventListener('click', () => {
         gameFlow.switchMode()
-        displayMsg("Now in AI mode. It is unbeatable")
+        displayMsg("Now in vs AI mode. By the way, it is unbeatable")
         vsPlayerBtn.style.display = "none";
         vsAIBtn.style.display = "block";
         document.querySelector('.player2>.name').textContent = players.getPlayer2().name;

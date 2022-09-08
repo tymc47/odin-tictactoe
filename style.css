@@ -149,3 +149,7 @@ button:disabled {
     justify-content: center;
     font-size: calc(var(--grid-height) - 40px);
 }
+
+.grid:hover {
+    opacity: 0.8;
+}
