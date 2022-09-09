@@ -176,9 +176,8 @@ const gameFlow = (function(){
         }
         
         //accomodate for AI turn
-        setTimeout(() => {
-            _currentPlayer.name == "A.I." ? AI.move() : false;
-        }, 800)
+       _currentPlayer.name == "A.I." ? AI.move() : false;
+
     }
     
     const endGame = (state) => {
